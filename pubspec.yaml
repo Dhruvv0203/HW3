@@ -1,0 +1,24 @@
+name: card_matching_game
+description: A new Flutter project for a card matching game.
+publish_to: 'none' # Remove this line if you wish to publish to pub.dev
+version: 1.0.0+1
+
+environment:
+  sdk: ">=2.18.0 <3.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  provider: ^6.0.0         # Added dependency for state management
+  cupertino_icons: ^1.0.2   # Pre-installed for iOS style icons
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+flutter:
+  uses-material-design: true
+
+  # Uncomment and add assets if you decide to use images or custom fonts:
+  # assets:
+  #   - assets/images/
