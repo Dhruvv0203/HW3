@@ -105,7 +105,6 @@ class GameProvider extends ChangeNotifier {
     bool allMatched = _cards.every((card) => card.isMatched);
     if (allMatched) {
       _timer?.cancel();
-      // A victory message can be added here.
       notifyListeners();
     }
   }
@@ -130,10 +129,25 @@ class CardModel {
   });
 }
 
-class GameScreen extends StatelessWidget {
+class GameScreen extends StatefulWidget {
+  @override
+  _GameScreenState createState() => _GameScreenState();
+}
+
+class _GameScreenState extends State<GameScreen> {
+  bool _dialogShown = false;
+
   @override
   Widget build(BuildContext context) {
     final gameProvider = Provider.of<GameProvider>(context);
+    // Check win condition: if all cards are matched and dialog hasn't been shown.
+    if (gameProvider.cards.isNotEmpty &&
+        gameProvider.cards.every((card) => card.isMatched) &&
+        !_dialogShown) {
+      _dialogShown = true;
+      Future.delayed(Duration.zero, () => _showWinDialog());
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: Text('Card Matching Game'),
@@ -175,6 +189,9 @@ class GameScreen extends StatelessWidget {
           // Restart Button
           ElevatedButton(
             onPressed: () {
+              setState(() {
+                _dialogShown = false;
+              });
               gameProvider.restartGame();
             },
             child: Text('Restart Game'),
@@ -182,6 +199,38 @@ class GameScreen extends StatelessWidget {
           SizedBox(height: 16),
         ],
       ),
+    );
+  }
+
+  void _showWinDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false, // Forces the user to tap OK.
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text("Yay!! You won the game 😊"),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              WinAnimationWidget(),
+              SizedBox(height: 16),
+              Text("Congratulations on matching all the cards!"),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                // Reset the dialog flag so it can be shown again on restart.
+                setState(() {
+                  _dialogShown = false;
+                });
+              },
+              child: Text("OK"),
+            ),
+          ],
+        );
+      },
     );
   }
 }
@@ -200,7 +249,6 @@ class CardWidget extends StatelessWidget {
           animation: rotate,
           child: child,
           builder: (context, child) {
-            // Create a 3D flip effect.
             final isUnder = (ValueKey(card.isFaceUp) != child!.key);
             var tilt = ((animation.value - 0.5).abs() - 0.5) * 0.003;
             tilt *= isUnder ? -1.0 : 1.0;
@@ -229,6 +277,52 @@ class CardWidget extends StatelessWidget {
               key: ValueKey(false),
               color: Colors.grey,
             ),
+    );
+  }
+}
+
+class WinAnimationWidget extends StatefulWidget {
+  @override
+  _WinAnimationWidgetState createState() => _WinAnimationWidgetState();
+}
+
+class _WinAnimationWidgetState extends State<WinAnimationWidget>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _animation;
+  
+  @override
+  void initState() {
+    super.initState();
+    // Animation that rotates the trophy icon continuously.
+    _controller = AnimationController(
+      vsync: this,
+      duration: Duration(seconds: 2),
+    );
+    _animation = Tween<double>(begin: 0, end: 2 * pi).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: Curves.easeInOut,
+      ),
+    );
+    _controller.repeat();
+  }
+  
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+  
+  @override
+  Widget build(BuildContext context) {
+    return RotationTransition(
+      turns: _animation,
+      child: Icon(
+        Icons.emoji_events,
+        size: 50,
+        color: Colors.amber,
+      ),
     );
   }
 }
